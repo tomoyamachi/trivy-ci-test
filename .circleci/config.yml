@@ -4,6 +4,9 @@ jobs:
       - image: docker:18.09-git
     steps:
       - checkout
+      - setup_remote_docker:
+          version: 18.09.0-ce
+          docker_layer_caching: true
       - restore_cache:
           key: vulnerability-db
       - run:
@@ -17,9 +20,7 @@ jobs:
             mv trivy /usr/local/bin
       - run:
           name: Scan the local image with trivy
-          command: |
-            docker -v
-            trivy --exit-code 0 --quiet trivy-ci-test:${CIRCLE_SHA1}
+          command: trivy --exit-code 0 --quiet trivy-ci-test:${CIRCLE_SHA1}
       - save_cache:
           key: vulnerability-db
           paths:
