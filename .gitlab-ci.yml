@@ -1,0 +1,24 @@
+image: docker:stable
+stages:
+  - test
+
+variables:
+  DOCKER_HOST: tcp://docker:2375/
+  DOCKER_DRIVER: overlay2
+services:
+  - docker:dind
+
+unit_test:
+  stage: test
+  before_script:
+    - apk -Uuv add bash git curl tar sed grep
+  script:
+    - docker build -t trivy-ci-test:${CI_COMMIT_SHORT_SHA} .
+    - |
+      VERSION=$(
+      curl --silent "https://api.github.com/repos/knqyf263/trivy/releases/latest" | \
+      grep '"tag_name":' | \
+      sed -E 's/.*"v([^"]+)".*/\1/' \
+      ) && curl -L -o trivy.tar.gz https://github.com/knqyf263/trivy/releases/download/v${VERSION}/trivy_${VERSION}_Linux-64bit.tar.gz &&  \
+      tar zxvf trivy.tar.gz
+    - ./trivy --exit-code 1 trivy-ci-test:${CI_COMMIT_SHORT_SHA}
